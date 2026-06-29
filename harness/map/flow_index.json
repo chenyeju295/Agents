@@ -1,0 +1,33 @@
+{
+  "_meta": {
+    "note": "记录跨包的业务流程。单包内的流程不需要在这里索引。"
+  },
+
+  "device_scan_and_connect": {
+    "description": "扫描附近 BLE 设备并建立连接",
+    "entry_package": "feature_device_search",
+    "steps": [
+      "检查蓝牙权限 → core_permission: PermissionService.request(AppPermission.bluetooth)",
+      "开始扫描 → core_ble: BleService.scanDevices()",
+      "UI 展示扫描结果 → feature_device_search: DeviceListPage",
+      "用户选择设备 → core_ble: BleService.connect(deviceId)",
+      "连接状态变更 → core_ble: bleConnectionProvider(deviceId) 广播给所有订阅方"
+    ],
+    "packages_involved": ["core_permission", "core_ble", "feature_device_search"],
+    "state_owner": "core_ble / bleConnectionProvider",
+    "spec": "specs/capabilities/ble.md"
+  },
+
+  "app_bootstrap": {
+    "description": "App 启动时的初始化流程",
+    "entry_package": "apps/<name>",
+    "steps": [
+      "ProviderScope 初始化，注册 overrides",
+      "core_storage 读取本地配置",
+      "检查上次连接的设备 ID",
+      "路由到首页或引导页"
+    ],
+    "packages_involved": ["core_storage", "core_base"],
+    "note": "具体路由逻辑在 App 壳层，不在 packages/ 里"
+  }
+}

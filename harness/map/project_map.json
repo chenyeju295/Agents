@@ -1,0 +1,125 @@
+{
+  "_meta": {
+    "version": "1.1",
+    "updated": "2026-06-29",
+    "note": "索引单位是包（package），不是单个文件。depends_on 对应 pubspec.yaml 依赖。signals 是语义召回标签，供 context_loader 匹配任务描述。修改包后同步更新本文件。"
+  },
+
+  "project": {
+    "name": "智能设备能力库平台",
+    "stack": ["flutter", "dart", "riverpod"],
+    "dart_sdk": "^3.12.2",
+    "workspace": true
+  },
+
+  "packages": {
+
+    "core_base": {
+      "path": "packages/core/core_base/",
+      "layer": "core",
+      "type": "package",
+      "status": "stable",
+      "barrel": "lib/core_base.dart",
+      "exports": ["Result<T>", "AppError", "RouteGroup", "interfaceProvider"],
+      "signals": [
+        "result", "error", "AppError", "failure", "success",
+        "route", "provider", "base", "foundation", "cross-cutting"
+      ],
+      "depends_on": [],
+      "consumed_by": ["core_ble", "core_network", "core_storage", "core_permission"]
+    },
+
+    "core_ble": {
+      "path": "packages/core/core_ble/",
+      "layer": "core",
+      "type": "plugin",
+      "status": "stable",
+      "barrel": "lib/core_ble.dart",
+      "exports": ["BleService", "BleDevice", "BleConnection", "BleConnectionState", "BleError"],
+      "signals": [
+        "ble", "bluetooth", "蓝牙", "scan", "扫描", "connect", "连接",
+        "device", "设备", "gatt", "characteristic", "notify", "mtu",
+        "disconnect", "断连", "peripheral", "central", "flutter_blue_plus"
+      ],
+      "depends_on": ["core_base"],
+      "providers": ["bleServiceProvider", "bleConnectionProvider", "bleScanResultsProvider"],
+      "platforms": {
+        "android": "flutter_blue_plus",
+        "ios": "flutter_blue_plus"
+      },
+      "spec": "specs/capabilities/ble.md"
+    },
+
+    "core_network": {
+      "path": "packages/core/core_network/",
+      "layer": "core",
+      "type": "package",
+      "status": "stable",
+      "barrel": "lib/core_network.dart",
+      "exports": ["NetworkService", "NetworkError"],
+      "signals": [
+        "network", "http", "api", "request", "response", "dio",
+        "网络", "接口", "请求", "timeout", "interceptor", "rest", "url"
+      ],
+      "depends_on": ["core_base"],
+      "providers": ["networkServiceProvider"],
+      "spec": "specs/capabilities/network.md"
+    },
+
+    "core_storage": {
+      "path": "packages/core/core_storage/",
+      "layer": "core",
+      "type": "plugin",
+      "status": "stable",
+      "barrel": "lib/core_storage.dart",
+      "exports": ["StorageService", "StorageError"],
+      "signals": [
+        "storage", "存储", "kv", "cache", "缓存", "persist", "持久化",
+        "read", "write", "local", "本地", "prefs", "shared preferences"
+      ],
+      "depends_on": ["core_base"],
+      "providers": ["storageServiceProvider"],
+      "spec": "specs/capabilities/storage.md"
+    },
+
+    "core_permission": {
+      "path": "packages/core/core_permission/",
+      "layer": "core",
+      "type": "plugin",
+      "status": "stable",
+      "barrel": "lib/core_permission.dart",
+      "exports": ["PermissionService", "AppPermission", "PermissionError"],
+      "signals": [
+        "permission", "权限", "授权", "denied", "拒绝", "request",
+        "location", "bluetooth permission", "manifest", "info.plist"
+      ],
+      "depends_on": ["core_base"],
+      "providers": ["permissionServiceProvider"],
+      "spec": "specs/capabilities/permissions.md"
+    },
+
+    "feature_device_search": {
+      "path": "packages/feature/feature_device_search/",
+      "layer": "feature",
+      "type": "package",
+      "status": "planned",
+      "barrel": "lib/feature_device_search.dart",
+      "signals": [
+        "search", "搜索", "device list", "设备列表", "discover", "发现",
+        "nearby", "附近", "scan result", "扫描结果", "pair", "配对"
+      ],
+      "depends_on": ["core_ble", "core_permission", "core_base"],
+      "note": "首个 feature，待建设"
+    }
+  },
+
+  "apps": {
+    "smartwear": {
+      "path": "apps/smartwear/",
+      "status": "planned",
+      "config": "app_configs/smartwear.yaml",
+      "modules": ["core_ble", "core_storage", "feature_device_search"],
+      "platforms": ["android", "ios"]
+    }
+  }
+}
