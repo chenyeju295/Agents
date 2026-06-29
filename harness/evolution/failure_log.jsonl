@@ -1,1 +1,1 @@
-{"_schema": "timestamp | package | layer | fail_types[] | log | resolved | fix_applied | notes"}
+{"_schema":"timestamp | mode | failed_checks[] | log | resolved"}

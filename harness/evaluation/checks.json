@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "checks": [
+    {
+      "id": "required-files",
+      "modes": ["quick", "full"],
+      "command": "test -f AGENTS.md && test -f docs/agent/project-map.md && test -f docs/agent/execution-harness.md && test -f docs/agent/update-rules.md"
+    },
+    {
+      "id": "json-syntax",
+      "modes": ["quick", "full"],
+      "command": "find harness -name '*.json' -type f -print0 | xargs -0 -n1 jq empty"
+    },
+    {
+      "id": "map-integrity",
+      "modes": ["quick", "full"],
+      "command": "jq -e '(.modules | keys) as $known | all(.modules[]; all((.depends_on // [])[]; IN($known[])))' harness/map/project_map.json >/dev/null && jq -r '.modules[].entry_files[]' harness/map/project_map.json | while IFS= read -r file_path; do test -e \"$file_path\" || exit 1; done"
+    },
+    {
+      "id": "shell-syntax",
+      "modes": ["quick", "full"],
+      "command": "bash -n harness/evaluation/eval.sh"
+    },
+    {
+      "id": "harness-lint-analysis",
+      "modes": ["quick", "full"],
+      "command": "dart analyze harness/evaluation/harness_lint.dart"
+    },
+    {
+      "id": "harness-lint",
+      "modes": ["quick", "full"],
+      "command": "dart run harness/evaluation/harness_lint.dart"
+    },
+    {
+      "id": "context-loader-analysis",
+      "modes": ["quick", "full"],
+      "command": "dart analyze harness/runtime/context_loader.dart"
+    },
+    {
+      "id": "context-loader-smoke",
+      "modes": ["full"],
+      "command": "dart run harness/runtime/context_loader.dart 'verification context' >/dev/null"
+    }
+  ]
+}

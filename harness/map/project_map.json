@@ -1,125 +1,66 @@
 {
-  "_meta": {
-    "version": "1.1",
-    "updated": "2026-06-29",
-    "note": "索引单位是包（package），不是单个文件。depends_on 对应 pubspec.yaml 依赖。signals 是语义召回标签，供 context_loader 匹配任务描述。修改包后同步更新本文件。"
-  },
-
+  "schema_version": 1,
   "project": {
-    "name": "智能设备能力库平台",
-    "stack": ["flutter", "dart", "riverpod"],
-    "dart_sdk": "^3.12.2",
-    "workspace": true
+    "name": "Agent Harness Engineering",
+    "purpose": "Reusable execution framework for AI coding agents",
+    "stage": "stage-0"
   },
-
-  "packages": {
-
-    "core_base": {
-      "path": "packages/core/core_base/",
-      "layer": "core",
-      "type": "package",
-      "status": "stable",
-      "barrel": "lib/core_base.dart",
-      "exports": ["Result<T>", "AppError", "RouteGroup", "interfaceProvider"],
-      "signals": [
-        "result", "error", "AppError", "failure", "success",
-        "route", "provider", "base", "foundation", "cross-cutting"
-      ],
-      "depends_on": [],
-      "consumed_by": ["core_ble", "core_network", "core_storage", "core_permission"]
+  "modules": {
+    "agent_protocol": {
+      "path": "AGENTS.md",
+      "role": "Mandatory workflow, safety, verification, and completion contract",
+      "entry_files": ["AGENTS.md", "docs/agent/execution-harness.md", "docs/agent/design-principles.md"],
+      "signals": ["agent", "workflow", "protocol", "contract", "规则", "工作流", "completion", "report", "principle", "原则"],
+      "depends_on": ["project_navigation", "verification", "execution_plans"]
     },
-
-    "core_ble": {
-      "path": "packages/core/core_ble/",
-      "layer": "core",
-      "type": "plugin",
-      "status": "stable",
-      "barrel": "lib/core_ble.dart",
-      "exports": ["BleService", "BleDevice", "BleConnection", "BleConnectionState", "BleError"],
-      "signals": [
-        "ble", "bluetooth", "蓝牙", "scan", "扫描", "connect", "连接",
-        "device", "设备", "gatt", "characteristic", "notify", "mtu",
-        "disconnect", "断连", "peripheral", "central", "flutter_blue_plus"
-      ],
-      "depends_on": ["core_base"],
-      "providers": ["bleServiceProvider", "bleConnectionProvider", "bleScanResultsProvider"],
-      "platforms": {
-        "android": "flutter_blue_plus",
-        "ios": "flutter_blue_plus"
-      },
-      "spec": "specs/capabilities/ble.md"
+    "project_navigation": {
+      "path": "docs/agent/",
+      "role": "Human-readable and machine-readable repository navigation",
+      "entry_files": ["docs/agent/project-map.md", "harness/map/project_map.json"],
+      "signals": ["map", "module", "context", "navigation", "地图", "上下文", "定位", "discovery"],
+      "depends_on": []
     },
-
-    "core_network": {
-      "path": "packages/core/core_network/",
-      "layer": "core",
-      "type": "package",
-      "status": "stable",
-      "barrel": "lib/core_network.dart",
-      "exports": ["NetworkService", "NetworkError"],
-      "signals": [
-        "network", "http", "api", "request", "response", "dio",
-        "网络", "接口", "请求", "timeout", "interceptor", "rest", "url"
-      ],
-      "depends_on": ["core_base"],
-      "providers": ["networkServiceProvider"],
-      "spec": "specs/capabilities/network.md"
+    "context_runtime": {
+      "path": "harness/runtime/",
+      "role": "Select candidate context from task text and the structured map",
+      "entry_files": ["harness/runtime/context_loader.dart"],
+      "signals": ["context", "loader", "candidate", "signal", "上下文", "候选", "关键词", "匹配"],
+      "depends_on": ["project_navigation"]
     },
-
-    "core_storage": {
-      "path": "packages/core/core_storage/",
-      "layer": "core",
-      "type": "plugin",
-      "status": "stable",
-      "barrel": "lib/core_storage.dart",
-      "exports": ["StorageService", "StorageError"],
-      "signals": [
-        "storage", "存储", "kv", "cache", "缓存", "persist", "持久化",
-        "read", "write", "local", "本地", "prefs", "shared preferences"
-      ],
-      "depends_on": ["core_base"],
-      "providers": ["storageServiceProvider"],
-      "spec": "specs/capabilities/storage.md"
+    "verification": {
+      "path": "harness/evaluation/",
+      "role": "Configure and execute repository verification checks",
+      "entry_files": ["harness/evaluation/checks.json", "harness/evaluation/eval.sh", "harness/evaluation/harness_lint.dart"],
+      "signals": ["verify", "check", "test", "lint", "build", "invariant", "验证", "测试", "检查", "评估", "约束"],
+      "depends_on": []
     },
-
-    "core_permission": {
-      "path": "packages/core/core_permission/",
-      "layer": "core",
-      "type": "plugin",
-      "status": "stable",
-      "barrel": "lib/core_permission.dart",
-      "exports": ["PermissionService", "AppPermission", "PermissionError"],
-      "signals": [
-        "permission", "权限", "授权", "denied", "拒绝", "request",
-        "location", "bluetooth permission", "manifest", "info.plist"
-      ],
-      "depends_on": ["core_base"],
-      "providers": ["permissionServiceProvider"],
-      "spec": "specs/capabilities/permissions.md"
+    "execution_plans": {
+      "path": "docs/agent/plans/",
+      "role": "Preserve resumable state, decisions, milestones, and verification for complex work",
+      "entry_files": ["docs/agent/plans/README.md", "docs/agent/plans/_template.md"],
+      "signals": ["plan", "milestone", "decision", "migration", "resume", "计划", "里程碑", "决策", "迁移"],
+      "depends_on": ["project_navigation", "verification"]
     },
-
-    "feature_device_search": {
-      "path": "packages/feature/feature_device_search/",
-      "layer": "feature",
-      "type": "package",
-      "status": "planned",
-      "barrel": "lib/feature_device_search.dart",
-      "signals": [
-        "search", "搜索", "device list", "设备列表", "discover", "发现",
-        "nearby", "附近", "scan result", "扫描结果", "pair", "配对"
-      ],
-      "depends_on": ["core_ble", "core_permission", "core_base"],
-      "note": "首个 feature，待建设"
-    }
-  },
-
-  "apps": {
-    "smartwear": {
-      "path": "apps/smartwear/",
-      "status": "planned",
-      "config": "app_configs/smartwear.yaml",
-      "modules": ["core_ble", "core_storage", "feature_device_search"],
-      "platforms": ["android", "ios"]
+    "adoption": {
+      "path": "docs/agent/adoption.md",
+      "role": "Define portable-core adoption, instruction layering, and customization safety",
+      "entry_files": ["docs/agent/adoption.md"],
+      "signals": ["adopt", "install", "copy", "override", "nested", "接入", "复制", "覆盖", "嵌套"],
+      "depends_on": ["agent_protocol", "project_navigation"]
+    },
+    "evolution": {
+      "path": "harness/evolution/",
+      "role": "Store reviewed failure guidance and raw failure records",
+      "entry_files": ["harness/evolution/rules.json", "harness/evolution/failure_log.jsonl"],
+      "signals": ["failure", "error", "rule", "learning", "失败", "错误", "规则", "演进"],
+      "depends_on": ["verification"]
+    },
+    "documentation_maintenance": {
+      "path": "docs/agent/update-rules.md",
+      "role": "Define when Agent-facing documentation changes are required",
+      "entry_files": ["docs/agent/update-rules.md"],
+      "signals": ["docs", "update", "drift", "documentation", "文档", "更新", "漂移", "维护"],
+      "depends_on": ["project_navigation"]
     }
   }
 }

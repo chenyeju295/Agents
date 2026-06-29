@@ -1,134 +1,195 @@
 #!/usr/bin/env dart
-// harness/runtime/context_loader.dart
-//
-// 用法：dart run harness/runtime/context_loader.dart "<task description>"
-//
-// 输出：候选包列表（按相关性排序）+ barrel 路径，供 agent 自主决定加载范围
-// 注意：输出是候选池，不是强制加载列表。agent 根据任务复杂度自主选择。
 
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 
-const _mapPath = 'harness/map/project_map.json';
-const _maxDepth = 2;
+const _defaultMapPath = 'harness/map/project_map.json';
 
-Future<void> main(List<String> args) async {
-  if (args.isEmpty) {
-    stderr.writeln('Usage: dart run harness/runtime/context_loader.dart "<task>"');
-    exit(1);
+void main(List<String> args) {
+  final parsed = _parseArgs(args);
+  if (parsed.task.isEmpty) {
+    stderr.writeln(
+      'Usage: dart run harness/runtime/context_loader.dart '
+      '[--map <path>] [--depth <n>] "<task>"',
+    );
+    exitCode = 64;
+    return;
   }
 
-  final task = args.join(' ').toLowerCase();
-  final map = _loadJson(_mapPath);
-  final packages = map['packages'] as Map<String, dynamic>;
+  final map = _readMap(parsed.mapPath);
+  final rawModules = map['modules'];
+  if (rawModules is! Map<String, dynamic>) {
+    stderr.writeln(
+      'ERROR: ${parsed.mapPath} must contain an object named "modules".',
+    );
+    exitCode = 65;
+    return;
+  }
 
-  // Step 1: signals 语义匹配 —— 比包名匹配覆盖更广
-  final scored = <String, int>{};
-  for (final entry in packages.entries) {
+  final task = parsed.task.toLowerCase();
+  final scored = <_Candidate>[];
+
+  for (final entry in rawModules.entries) {
+    if (entry.value is! Map<String, dynamic>) continue;
+    final module = entry.value as Map<String, dynamic>;
+    final signals = _stringList(module['signals']);
     final name = entry.key;
-    final meta = entry.value as Map<String, dynamic>;
-    final signals = (meta['signals'] as List?)?.cast<String>() ?? [];
-
-    var score = 0;
+    var score = _matchScore(task, name);
     for (final signal in signals) {
-      if (task.contains(signal.toLowerCase())) score++;
+      score += _matchScore(task, signal);
     }
-    // 包名本身也作为信号（向后兼容）
-    if (task.contains(name.toLowerCase())) score += 2;
-
-    if (score > 0) scored[name] = score;
+    if (score > 0) scored.add(_Candidate(name, score, module));
   }
 
-  // Step 2: 按分数排序候选包
-  final candidates = scored.entries.toList()
-    ..sort((a, b) => b.value.compareTo(a.value));
+  scored.sort((a, b) {
+    final scoreOrder = b.score.compareTo(a.score);
+    return scoreOrder != 0 ? scoreOrder : a.name.compareTo(b.name);
+  });
 
-  // Step 3: 沿 depends_on 展开（供 agent 参考，不强制加载）
-  final directMatches = candidates.map((e) => e.key).toSet();
-  final expanded = <String, int>{}; // packageName → depth
-  final frontier = Queue<MapEntry<String, int>>();
-  for (final c in directMatches) {
-    frontier.add(MapEntry(c, 0));
-    expanded[c] = 0;
-  }
+  final directNames = scored.map((candidate) => candidate.name).toSet();
+  final dependencies = _expandDependencies(
+    directNames,
+    rawModules,
+    parsed.maxDepth,
+  );
 
-  while (frontier.isNotEmpty) {
-    final current = frontier.removeFirst();
-    if (current.value >= _maxDepth) continue;
-    final pkg = packages[current.key] as Map<String, dynamic>?;
-    final deps = (pkg?['depends_on'] as List?)?.cast<String>() ?? [];
-    for (final dep in deps) {
-      if (!expanded.containsKey(dep)) {
-        expanded[dep] = current.value + 1;
-        frontier.add(MapEntry(dep, current.value + 1));
-      }
-    }
-  }
-
-  // Step 4: 构建输出
-  final candidateDetails = candidates.map((e) {
-    final pkg = packages[e.key] as Map<String, dynamic>;
-    return {
-      'package': e.key,
-      'score': e.value,
-      'barrel': '${pkg['path']}${pkg['barrel']}',
-      'layer': pkg['layer'],
-      'status': pkg['status'],
-      'providers': pkg['providers'] ?? [],
-      'spec': pkg['spec'],
-    };
-  }).toList();
-
-  final dependencyContext = expanded.entries
-      .where((e) => !directMatches.contains(e.key))
-      .map((e) {
-        final pkg = packages[e.key] as Map<String, dynamic>?;
-        return {
-          'package': e.key,
-          'depth': e.value,
-          'barrel': pkg != null ? '${pkg['path']}${pkg['barrel']}' : null,
-          'reason': 'depends_on of matched package',
-        };
-      }).toList();
-
-  final output = {
-    'task': task,
-    'candidates': candidateDetails,           // 直接命中，按 score 排序
-    'dependency_context': dependencyContext,  // 依赖展开，供参考
-    'agent_note': [
-      'candidates 是候选池，不是强制加载列表',
-      '根据任务复杂度自主选择加载范围',
-      '候选不足以解释问题时，允许加载 dependency_context 或扩展',
+  final output = <String, Object?>{
+    'task': parsed.task,
+    'map': parsed.mapPath,
+    'candidates': [
+      for (final candidate in scored)
+        {
+          'module': candidate.name,
+          'score': candidate.score,
+          'path': candidate.data['path'],
+          'role': candidate.data['role'],
+          'entry_files': _stringList(candidate.data['entry_files']),
+        },
     ],
-    'cross_package': candidateDetails.length > 1,
+    'dependency_context': [
+      for (final dependency in dependencies.entries)
+        {
+          'module': dependency.key,
+          'depth': dependency.value,
+          'entry_files': _stringList(
+            (rawModules[dependency.key]
+                as Map<String, dynamic>?)?['entry_files'],
+          ),
+        },
+    ],
+    'note': scored.isEmpty
+        ? 'No signal matched. Inspect files explicitly named by the task or update the map with verified signals.'
+        : 'Candidates are navigation hints. Confirm important claims against source files.',
   };
 
-  stdout.writeln(JsonEncoder.withIndent('  ').convert(output));
-
-  stderr.writeln('\n=== Context Loader (v1.1) ===');
-  stderr.writeln('Task      : $task');
-  stderr.writeln('Candidates: ${candidates.map((e) => '${e.key}(${e.value})').join(', ')}');
-  stderr.writeln('Dep ctx   : ${dependencyContext.map((e) => e['package']).join(', ')}');
-  if (candidateDetails.length > 1) {
-    stderr.writeln('Tip       : 多包命中 — 考虑读 flow_index.json 确认跨包流程');
-  }
-  if (candidateDetails.isEmpty) {
-    stderr.writeln('Warning   : 无候选包命中 — 检查任务描述或手动指定包名');
-  }
+  stdout.writeln(const JsonEncoder.withIndent('  ').convert(output));
 }
 
-Map<String, dynamic> _loadJson(String path) {
+_Arguments _parseArgs(List<String> args) {
+  var mapPath = _defaultMapPath;
+  var maxDepth = 2;
+  final taskParts = <String>[];
+
+  for (var index = 0; index < args.length; index++) {
+    switch (args[index]) {
+      case '--map':
+        if (++index >= args.length) _argumentError('--map requires a path.');
+        mapPath = args[index];
+      case '--depth':
+        if (++index >= args.length)
+          _argumentError('--depth requires a number.');
+        maxDepth = int.tryParse(args[index]) ?? -1;
+        if (maxDepth < 0) _argumentError('--depth must be zero or greater.');
+      default:
+        taskParts.add(args[index]);
+    }
+  }
+
+  return _Arguments(mapPath, maxDepth, taskParts.join(' ').trim());
+}
+
+Never _argumentError(String message) {
+  stderr.writeln('ERROR: $message');
+  exit(64);
+}
+
+Map<String, dynamic> _readMap(String path) {
   final file = File(path);
   if (!file.existsSync()) {
-    stderr.writeln('ERROR: $path not found. Run from repo root.');
-    exit(1);
+    stderr.writeln('ERROR: map not found: $path');
+    exit(66);
   }
-  return jsonDecode(file.readAsStringSync()) as Map<String, dynamic>;
+
+  try {
+    final value = jsonDecode(file.readAsStringSync());
+    if (value is Map<String, dynamic>) return value;
+  } on FormatException catch (error) {
+    stderr.writeln('ERROR: invalid JSON in $path: ${error.message}');
+    exit(65);
+  }
+
+  stderr.writeln('ERROR: map root must be a JSON object: $path');
+  exit(65);
 }
 
-class Queue<T> {
-  final _list = <T>[];
-  void add(T item) => _list.add(item);
-  T removeFirst() => _list.removeAt(0);
-  bool get isNotEmpty => _list.isNotEmpty;
+int _matchScore(String task, String rawSignal) {
+  final signal = rawSignal.trim().toLowerCase();
+  if (signal.isEmpty || !task.contains(signal)) return 0;
+  return signal.contains(RegExp(r'\s')) ? 2 : 1;
+}
+
+List<String> _stringList(Object? value) {
+  if (value is! List) return const [];
+  return value.whereType<String>().toList(growable: false);
+}
+
+Map<String, int> _expandDependencies(
+  Set<String> directNames,
+  Map<String, dynamic> modules,
+  int maxDepth,
+) {
+  final result = <String, int>{};
+  final queue = Queue<MapEntry<String, int>>();
+  for (final name in directNames) {
+    queue.add(MapEntry(name, 0));
+  }
+
+  while (queue.isNotEmpty) {
+    final current = queue.removeFirst();
+    if (current.value >= maxDepth) continue;
+    final module = modules[current.key];
+    if (module is! Map<String, dynamic>) continue;
+    for (final dependency in _stringList(module['depends_on'])) {
+      if (directNames.contains(dependency) || result.containsKey(dependency))
+        continue;
+      if (!modules.containsKey(dependency)) {
+        stderr.writeln(
+          'WARNING: ${current.key} references unknown dependency "$dependency".',
+        );
+        continue;
+      }
+      final depth = current.value + 1;
+      result[dependency] = depth;
+      queue.add(MapEntry(dependency, depth));
+    }
+  }
+
+  return result;
+}
+
+final class _Arguments {
+  const _Arguments(this.mapPath, this.maxDepth, this.task);
+
+  final String mapPath;
+  final int maxDepth;
+  final String task;
+}
+
+final class _Candidate {
+  const _Candidate(this.name, this.score, this.data);
+
+  final String name;
+  final int score;
+  final Map<String, dynamic> data;
 }

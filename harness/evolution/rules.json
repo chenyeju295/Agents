@@ -1,84 +1,26 @@
 {
-  "_meta": {
-    "note": "人工维护的已知错误修复知识库。从 failure_log.jsonl 提取规律后，由人工确认再添加。不做自动写入。",
-    "updated": "2026-06-29",
-    "how_to_add": "1. 查看 failure_log.jsonl 中 resolved:false 的记录 → 2. 人工分析根因 → 3. 确认修复有效后添加到本文件 → 4. 将 failure_log 对应条目标记 resolved:true"
-  },
-
-  "AnalyzeError": {
-    "common_causes": [
-      "import 用了相对路径（违反 R7）",
-      "跨包使用了 src/ 内部文件（违反 R1）",
-      "返回了原始异常而非 Result<T>（违反 R4）",
-      "barrel 文件导出了 src/ 内部类型以外的内容"
-    ],
-    "fix": [
-      "检查 import 是否全用 package: 形式",
-      "检查是否 import 了其他包的 src/ 路径",
-      "确认跨包方法签名返回 Result<T>"
-    ]
-  },
-
-  "TestError": {
-    "common_causes": [
-      "mock MethodChannel 未正确设置",
-      "异步测试未 await",
-      "Result<T> 的 failure 分支未覆盖"
-    ],
-    "fix": [
-      "检查 TestDefaultBinaryMessengerBinding mock 设置",
-      "确认所有 async 测试有 await",
-      "补充 failure path 的测试用例"
-    ]
-  },
-
-  "AndroidBuildError": {
-    "common_causes": [
-      "新增 plugin 未执行 flutter pub get",
-      "Kotlin 版本不兼容",
-      "AndroidManifest 权限缺失"
-    ],
-    "fix": [
-      "flutter pub get",
-      "检查 android/build.gradle 的 kotlin_version",
-      "对照 specs/capabilities/<name>.md 补充权限声明"
-    ]
-  },
-
-  "MissingPluginException": {
-    "common_causes": [
-      "plugin 未在 pubspec 注册",
-      "flutter pub get 未执行",
-      "iOS: pod install 未执行"
-    ],
-    "fix": [
-      "flutter pub get",
-      "cd ios && pod install（iOS）",
-      "确认 pubspec.yaml flutter.plugin 字段正确"
-    ]
-  },
-
-  "DependencyDirectionViolation": {
-    "common_causes": [
-      "feature 包 import 了另一个 feature 包的 src/",
-      "core 包 import 了 feature 包",
-      "packages/ 内的包 import 了 apps/ 的内容"
-    ],
-    "fix": [
-      "检查 pubspec.yaml dependencies，移除违规依赖",
-      "跨 feature 状态共享改为通过 core Provider",
-      "参考 R1 规则和 Decision tree"
-    ]
-  },
-
-  "ResultNotUsed": {
-    "common_causes": [
-      "调用了返回 Result<T> 的方法但未处理 failure 分支",
-      "直接 .value 取值而未检查 isSuccess"
-    ],
-    "fix": [
-      "用 result.when(success: ..., failure: ...) 处理两个分支",
-      "或用 result.getOrNull() 配合 null 检查"
-    ]
-  }
+  "schema_version": 1,
+  "policy": "Rules are added only after a failure pattern is reproduced, fixed, and reviewed.",
+  "rules": [
+    {
+      "id": "map-schema-invalid",
+      "applies_to": ["json-syntax", "context-loader-analysis", "context-loader-smoke"],
+      "symptoms": ["Invalid JSON", "missing modules object", "unknown dependency"],
+      "response": [
+        "Validate the JSON syntax.",
+        "Compare the map with the current schema and filesystem.",
+        "Correct the smallest inaccurate map entry and rerun the failed check."
+      ]
+    },
+    {
+      "id": "verification-command-invalid",
+      "applies_to": ["shell-syntax", "required-files"],
+      "symptoms": ["command not found", "missing required file", "shell syntax error"],
+      "response": [
+        "Confirm the command works directly from the repository root.",
+        "Update checks.json and the documented command together.",
+        "Do not mark an unavailable command as passing."
+      ]
+    }
+  ]
 }
