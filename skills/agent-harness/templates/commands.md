@@ -9,8 +9,10 @@ Command contracts for repeatable local work. Defines the expected tool surface
 so agents verify changes with the smallest command that proves them, instead of
 inventing command names or over-running full builds.
 
-Do not list a command as available until it exists and has been run
-successfully.
+Exact, runnable commands (with flags) are high-signal for agents — list only
+commands that exist and have been run successfully. Do not list planned
+commands as available. Replace every sample row below with a real command or
+delete it; never leave angle-bracket placeholders in an installed harness.
 
 ## Current Commands
 
@@ -33,6 +35,15 @@ Use the smallest command that proves the change:
 
 Avoid repeated workspace-wide runs after a narrower command already proved the
 modified scope, unless the task crosses module boundaries.
+
+For a Git repository, inspect `git status --short` and the relevant `git diff`
+as change evidence; these observations complement, but do not replace,
+verification. Do not list a Git operation as a required project gate unless the
+repository actually enforces it.
+
+When reporting done, state the command, scope, and result, then state exactly
+what was not run. Do not describe untested builds, deployments, simulator runs,
+or device runs as passing.
 
 ## Script Standards (if/when scripts are added)
 

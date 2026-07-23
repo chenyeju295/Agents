@@ -29,11 +29,17 @@ restate.
 
 Context is scarce and shared. Front-load only what every task needs (entry
 point, fact priority, where-to-find-X); push detail behind links the agent
-follows on demand. A 40-line `AGENTS.md` that routes well beats a 600-line one
+follows on demand. A ~100-line `AGENTS.md` that routes well beats a 600-line one
 that the agent partially reads and half-applies.
 
+Industry practice converges on the same shape: `AGENTS.md` as a table of
+contents, `docs/` as the system of record
+([agents.md](https://agents.md/), OpenAI harness engineering). A monolithic
+manual fails on context pressure, instant rot, and unverifiability.
+
 Keep reference links one level deep from the entry doc — deeply nested chains
-get partially traversed.
+get partially traversed. Put the full Fact Priority table once in `INDEX.md`;
+the entry point links, it does not duplicate.
 
 ## 4. Doc sync is a step, not a virtue
 
@@ -42,6 +48,11 @@ the Doc Sync Matrix says *given this change, edit exactly these docs*. Treat it
 like a compiler rule, not etiquette. Most observed drift traces to this matrix
 being absent or unconsulted — so it is the first thing to add and the first
 thing to check in an audit.
+
+Equally important: **when not to sync**. Internal refactors and
+behavior-preserving fixes that leave public docs true should not churn indexes.
+Over-sync creates noise and trains agents to ignore the matrix. Optional CI or
+a periodic "doc-gardening" pass can enforce the same checklist mechanically.
 
 ## 5. Proportionality
 
@@ -71,7 +82,8 @@ trap costs real time; do not pre-populate hypothetical ones.
 |---|---|---|
 | Copy another repo's harness content verbatim | Encodes the *other* project's reality; rules won't match the code | Copy the *structure* (templates); fill from this repo |
 | Aspirational rules | Agents detect the mismatch with code and stop trusting all docs | Only write rules the code actually follows; make violations visible |
-| `AGENTS.md` as a manual | Burns context, gets partially read | Route in ≤1 screen; detail behind links |
+| `AGENTS.md` as a manual | Burns context, gets partially read, rots | Route in ~100 lines; detail behind links |
+| Doc Sync on every edit | Noise + ignored matrix | Trigger only on public/inventory/contract/ADR changes |
 | Duplicating a rule across files | Guaranteed divergence | Single authoritative location + links |
 | All 8 blocks on a tiny repo | Ceremony nobody maintains → whole harness ignored | Adoption Ladder |
 | Estimate markers in fact fields (`~`, `TBD`) | Reads as fact, silently wrong | Real value, or explicitly marked unknown |

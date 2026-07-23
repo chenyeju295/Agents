@@ -5,9 +5,18 @@ kind: plan
 
 # <NNNN>-<short-kebab-name>
 
-Execution plan for a complex or multi-session task. Carries state across agents,
-threads, and sessions so nothing relies on chat history. Update this same file
-continuously — do not create a new copy each session.
+Execution plan for a complex or multi-session task. Carries state across
+agents, threads, and sessions so nothing relies on chat history. Update this
+same file continuously — do not create a new copy each session.
+
+Frontmatter `status` is authoritative. Valid values:
+
+| Status | Meaning |
+|---|---|
+| `draft` | Proposed scope, not yet selected for execution |
+| `active` | Currently being executed — only one current active plan for the task |
+| `paused` | On hold; document the resume condition |
+| `completed` | Acceptance met; verification evidence recorded — historical, do not reopen |
 
 ## Goal
 
@@ -44,7 +53,9 @@ such — never imply an unrun check passed.>
 <!--
 Conventions:
 - Filename: NNNN-short-kebab-name.md.
-- Status: active | paused (record resume condition) | completed (record evidence).
-- Create when a task spans multiple modules/sessions or has unresolved decisions.
-  Simple, single-session edits do not need a plan.
+- Create when a task spans multiple modules/sessions or has unresolved
+  decisions. Simple, single-session edits do not need a plan.
+- Select a plan only when the task continues it or unfinished scope clearly
+  matches. Update only the selected active plan while executing.
+- A completed plan is historical evidence; create a follow-up plan for new work.
 -->
