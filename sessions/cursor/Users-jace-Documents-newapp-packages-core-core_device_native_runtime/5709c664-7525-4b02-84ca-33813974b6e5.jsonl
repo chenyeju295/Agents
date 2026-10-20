@@ -1,0 +1,2 @@
+{"type":"session","tool":"cursor","session_id":"5709c664-7525-4b02-84ca-33813974b6e5","name":"Agents project documentation","created_at":"2026-07-21T08:46:18.065000+00:00","cwd":"/Users/jace/Documents/newapp/packages/core/core_device_native_runtime","workspace_id":"595ace3d2f203319109b219e6085611b","is_archived":1,"is_subagent":0}
+{"type":"message","role":"user","text":"请使用 agent-harness Skill，为本项目建立最小可用的 AGENTS 工程文档，并根据实际需要逐步完善。","timestamp":"2026-07-21T08:46:18.477Z"}

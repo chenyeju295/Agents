@@ -1,0 +1,60 @@
+{
+  "codex": {
+    "bytes": 89694580,
+    "files": 471,
+    "messages": 96683,
+    "sessions": 471,
+    "skipped_files": 0,
+    "skipped_sessions": 3
+  },
+  "cursor": {
+    "bytes": 12220866,
+    "files": 344,
+    "messages": 11669,
+    "sessions": 344,
+    "skipped_bubbles": 79456,
+    "skipped_sessions": 158
+  },
+  "deepseek": {
+    "bytes": 17295532,
+    "duplicate_files": 8,
+    "files": 165,
+    "messages": 9851,
+    "sessions": 165,
+    "skipped_sessions": 8
+  },
+  "format": {
+    "excluded": [
+      "tool calls",
+      "tool results",
+      "reasoning",
+      "attachments",
+      "checkpoints",
+      "caches",
+      "system/developer instructions"
+    ],
+    "files": "codex/<project>/<session>.jsonl etc.",
+    "line_types": [
+      "session",
+      "message"
+    ],
+    "message_roles": [
+      "user",
+      "assistant"
+    ],
+    "text_policy": "verbatim message text; no rewriting, trimming, summary or compression"
+  },
+  "generated_at": "2026-10-20T09:16:46.453591+00:00",
+  "redactions": [
+    {
+      "fields": [
+        "VOLC_AK",
+        "VOLC_SK"
+      ],
+      "line": 28,
+      "path": "codex/Users-jace-Documents-newapp/019f3a43-157c-7fa0-bf1a-b559000d6722.jsonl",
+      "reason": "GitHub push protection (VolcEngine Access Key ID)",
+      "replacement": "***"
+    }
+  ]
+}

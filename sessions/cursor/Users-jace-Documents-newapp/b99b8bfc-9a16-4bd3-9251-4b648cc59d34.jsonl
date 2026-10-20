@@ -1,0 +1,2 @@
+{"type":"session","tool":"cursor","session_id":"b99b8bfc-9a16-4bd3-9251-4b648cc59d34","name":"Core BLE implementation analysis","created_at":"2026-07-16T08:55:01.143000+00:00","cwd":"/Users/jace/Documents/newapp","workspace_id":"b1a248f485d076c4075755f3f01594ad","is_archived":1,"is_subagent":0}
+{"type":"message","role":"user","text":"packages/core/core_ble 客观分析BLE的最新实现 ，你是高级架构师，需客观看到当前项目，不要过度依赖现有实现","timestamp":"2026-07-16T08:55:19.168Z"}

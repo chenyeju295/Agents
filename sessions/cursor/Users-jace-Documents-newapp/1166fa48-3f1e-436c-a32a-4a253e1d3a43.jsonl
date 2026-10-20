@@ -1,0 +1,9 @@
+{"type":"session","tool":"cursor","session_id":"1166fa48-3f1e-436c-a32a-4a253e1d3a43","name":"Login page keyboard issue","created_at":"2026-07-03T10:25:24.643000+00:00","cwd":"/Users/jace/Documents/newapp","workspace_id":"b1a248f485d076c4075755f3f01594ad","is_archived":0,"is_subagent":0}
+{"type":"message","role":"user","text":"问题：为啥登录页面点击密码没弹出键盘，账号可以","timestamp":"2026-07-03T10:25:24.779Z"}
+{"type":"message","role":"assistant","text":"Let me check the git diff on the login page and auth service to see what recently changed:","timestamp":"2026-07-03T10:26:37.137Z"}
+{"type":"message","role":"assistant","text":"The login page itself hasn't changed. Let me look at the auth service/controller to understand the initial state:","timestamp":"2026-07-03T10:27:09.752Z"}
+{"type":"message","role":"assistant","text":"Let me check the `authSessionProvider` and the session model:","timestamp":"2026-07-03T10:28:41.422Z"}
+{"type":"message","role":"assistant","text":"Let me look at the app.dart and app_config.dart since those are modified and might affect keyboard behavior:","timestamp":"2026-07-03T10:29:02.537Z"}
+{"type":"message","role":"assistant","text":"코드를 보면 원인이 보입니다. 비밀번호 필드와 계정 필드의 결정적 차이를 확인해보겠습니다.","timestamp":"2026-07-03T10:30:36.241Z"}
+{"type":"message","role":"assistant","text":"**原因找到了。**\n\n计账号字段有 `textInputAction: TextInputAction.next`，而密码字段完全没有设置 `textInputAction`。\n\n这是个经典问题：\n\n- 账号字段的 `TextInputAction.next` 明确告诉系统\"有下一个输入框\"，IME（输入法引擎）会主动管理焦点和键盘状态\n- 密码字段没有设置 `textInputAction`，在部分 Android 机型上，IME 遇到 `obscureText: true` 又没有明确 action 时，键盘不弹出（尤其是手动点击，而不是通过\"下一步\"跳转过来的场景）\n\n修复一行：","timestamp":"2026-07-03T10:30:46.571Z"}
+{"type":"message","role":"assistant","text":"`textInputAction: TextInputAction.done` 明确告知 IME 这是最后一个输入框，键盘该用\"完成/确认\"动作。部分 Android IME 在 `obscureText: true` 且 action 未指定时会跳过弹出键盘的逻辑，加这一行即可修复。","timestamp":"2026-07-03T10:30:57.510Z"}
